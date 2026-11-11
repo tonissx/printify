@@ -69,7 +69,7 @@ Clique com o botão direito no ícone do Printify: capturar, gravar, abrir a pas
 ## Instalação
 
 [**⬇ Baixar a versão mais recente**](https://github.com/tonissx/printify/releases/latest). Não precisa de Node,
-ffmpeg ou nada além do instalador (`Printify Setup x.y.z.exe`). O ffmpeg já vem dentro do app.
+ffmpeg ou nada além do instalador (`Printify-Setup-x.y.z.exe`). O ffmpeg já vem dentro do app.
 
 **Requisito:** Windows 10 ou 11, 64 bits.
 
@@ -84,14 +84,14 @@ Para conferir a procedência:
 2. **Confira o hash SHA-256** com o `SHA256SUMS.txt` da mesma release:
 
    ```powershell
-   Get-FileHash .\Printify.Setup.x.y.z.exe -Algorithm SHA256
+   Get-FileHash .\Printify-Setup-x.y.z.exe -Algorithm SHA256
    ```
 
 3. **Confira o atestado de procedência** (prova de que o arquivo saiu do workflow de release deste repositório).
    Precisa do [GitHub CLI](https://cli.github.com/):
 
    ```bash
-   gh attestation verify "Printify.Setup.x.y.z.exe" -R tonissx/printify
+   gh attestation verify "Printify-Setup-x.y.z.exe" -R tonissx/printify
    ```
 
 ### Atalho já em uso?
