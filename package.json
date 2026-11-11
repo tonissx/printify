@@ -60,6 +60,8 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@emnapi/core": "^2.0.0-beta.2",
+    "@emnapi/runtime": "^2.0.0-beta.2",
     "@napi-rs/canvas": "^1.1.0",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
