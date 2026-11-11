@@ -1,0 +1,55 @@
+/* Gerado por scripts/gen-tokens.mjs a partir de tokens.json. Não edite. */
+:root {
+  --canvas: #f6f6f3;
+  --surface: #ffffff;
+  --surface-sunken: #ecece7;
+  --line: #e2e2dc;
+  --line-strong: #8a8c86;
+  --ink: #17181a;
+  --ink-muted: #5d5f63;
+  --ink-faint: #8a8c86;
+  --on-ink: #ffffff;
+  --flash: #f04a23;
+  --on-flash: #17181a;
+  --flash-text: #c2361a;
+  --flash-soft: #fde3da;
+  --ok: #1f7a45;
+  --focus: var(--ink);
+  --scrim: rgba(10, 11, 12, 0.45);
+  --shadow-float: 0 1px 2px rgba(10, 11, 12, 0.08), 0 8px 24px rgba(10, 11, 12, 0.12);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --duration-instant: 80ms;
+  --duration-quick: 140ms;
+  --font-sans: "Geist", "Segoe UI Variable", "SF Pro Text", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Cascadia Mono", "SF Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #111214;
+    --surface: #1a1b1e;
+    --surface-sunken: #25272b;
+    --line: #2b2d31;
+    --line-strong: #6e7178;
+    --ink: #f2f2ee;
+    --ink-muted: #a3a5aa;
+    --ink-faint: #6e7178;
+    --on-ink: #17181a;
+    --flash: #ff6a45;
+    --on-flash: #17181a;
+    --flash-text: #ff8a6b;
+    --flash-soft: #3a1f18;
+    --ok: #4cc27e;
+    --focus: var(--ink);
+    --scrim: rgba(0, 0, 0, 0.55);
+    --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
