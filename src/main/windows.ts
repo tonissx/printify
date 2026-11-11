@@ -1,4 +1,5 @@
-import { BrowserWindow, desktopCapturer, screen, type Display } from 'electron'
+import { BrowserWindow, desktopCapturer, nativeTheme, screen, type Display } from 'electron'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Mode, OverlayInit, Rect, RecordStart, ToastInit } from '../shared/types'
 import { getPrefs } from './storage'
@@ -50,6 +51,9 @@ export let activeDisplay: Display | null = null
 export const isBusy = (): boolean => overlayWin !== null || pillWin !== null
 
 async function freeze(display: Display): Promise<string> {
+  // PRINTIFY_FAKE_SHOT=<png>: usa essa imagem no lugar da tela (teste automatizado da seleção).
+  const fake = process.env['PRINTIFY_FAKE_SHOT']
+  if (fake) return `data:image/png;base64,${readFileSync(fake).toString('base64')}`
   const { width, height } = display.size
   const sources = await desktopCapturer.getSources({
     types: ['screen'],
@@ -157,4 +161,33 @@ export function showToast(init: ToastInit): void {
   })
   load(win, 'toast')
   setTimeout(() => !win.isDestroyed() && win.close(), init.action ? 6000 : 2400)
+}
+
+export let libraryWin: BrowserWindow | null = null
+
+/** Janela comum (com moldura) para buscar nas capturas salvas. Só existe uma. */
+export function openLibrary(): void {
+  if (libraryWin && !libraryWin.isDestroyed()) {
+    if (libraryWin.isMinimized()) libraryWin.restore()
+    libraryWin.show()
+    libraryWin.focus()
+    return
+  }
+  const win = new BrowserWindow({
+    width: 1040,
+    height: 720,
+    minWidth: 640,
+    minHeight: 420,
+    title: 'Printify · Capturas',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#111214' : '#f6f6f3',
+    autoHideMenuBar: true,
+    show: false,
+    webPreferences: webPreferences()
+  })
+  libraryWin = win
+  win.once('ready-to-show', () => win.show())
+  win.on('closed', () => {
+    if (libraryWin === win) libraryWin = null
+  })
+  load(win, 'library')
 }

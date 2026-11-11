@@ -6,7 +6,7 @@ const cx = (...a: Array<string | false | undefined | null>) => a.filter(Boolean)
 
 export type IconName =
   | 'area' | 'window' | 'screen' | 'record' | 'pause' | 'stop' | 'pen' | 'arrow' | 'text'
-  | 'cursor' | 'highlight' | 'line' | 'rect' | 'crop' | 'copy' | 'folder' | 'timer' | 'mic' | 'camera' | 'check' | 'close'
+  | 'scan' | 'shield' | 'redact' | 'search' | 'cursor' | 'highlight' | 'line' | 'rect' | 'crop' | 'copy' | 'folder' | 'timer' | 'mic' | 'camera' | 'check' | 'close'
 
 type Shape = [string, Record<string, string | number>]
 const P: Record<IconName, Shape[]> = {
@@ -19,6 +19,10 @@ const P: Record<IconName, Shape[]> = {
   pen: [['path', { d: 'M10.5 3 13 5.5 6 12.5 3 13l.5-3z' }]],
   arrow: [['path', { d: 'M3.5 12.5 12 4M6.5 4H12v5.5' }]],
   text: [['path', { d: 'M3.5 4V3h9v1M8 3v10M6 13h4' }]],
+  scan: [['path', { d: 'M2.5 5V3.5a1 1 0 0 1 1-1H5M11 2.5h1.5a1 1 0 0 1 1 1V5M13.5 11v1.5a1 1 0 0 1-1 1H11M5 13.5H3.5a1 1 0 0 1-1-1V11' }], ['path', { d: 'M5.5 6.5h5M5.5 9.5h3' }]],
+  shield: [['path', { d: 'M8 2 12.5 3.5v4c0 3-2 5-4.5 6.5C5.5 12.5 3.5 10.5 3.5 7.5v-4z' }], ['path', { d: 'm6 8 1.5 1.5L10 6.5' }]],
+  redact: [['rect', { x: 2.5, y: 5.5, width: 11, height: 5, rx: 1, fill: 'currentColor', stroke: 'none' }]],
+  search: [['circle', { cx: 7, cy: 7, r: 4.5 }], ['path', { d: 'm10.5 10.5 3 3' }]],
   cursor: [['path', { d: 'M4 2.5v10l2.7-2.6 1.8 3.6 1.7-.8-1.8-3.5H12z' }]],
   highlight: [['path', { d: 'm9 3.5 3.5 3.5-5 5H4v-3.5z' }], ['path', { d: 'M3 14h10' }]],
   line: [['path', { d: 'M3 13 13 3' }]],

@@ -9,6 +9,7 @@ export type Annotation =
   | { kind: 'line'; from: Pt; to: Pt }
   | { kind: 'rect'; from: Pt; to: Pt }
   | { kind: 'highlight'; from: Pt; to: Pt }
+  | { kind: 'redact'; from: Pt; to: Pt }
   | { kind: 'text'; at: Pt; text: string }
 
 export const LINE_WIDTH = 3
@@ -45,6 +46,14 @@ export function drawAnnotations(
       if (rest.length === 0) ctx.lineTo(first.x + 0.01, first.y)
       for (const p of rest) ctx.lineTo(p.x, p.y)
       ctx.stroke()
+    } else if (a.kind === 'redact') {
+      // Tarja 100% opaca (nunca desfoque): o que está embaixo não pode ser recuperado do PNG.
+      const f = px(a.from)
+      const t = px(a.to)
+      ctx.save()
+      ctx.fillStyle = '#000'
+      ctx.fillRect(Math.min(f.x, t.x), Math.min(f.y, t.y), Math.abs(t.x - f.x), Math.abs(t.y - f.y))
+      ctx.restore()
     } else if (a.kind === 'highlight') {
       const f = px(a.from)
       const t = px(a.to)
@@ -146,6 +155,13 @@ export function hits(a: Annotation, p: Pt, tol = HIT_TOLERANCE): boolean {
       return distToSegment(p, a.from, a.to) <= tol
     case 'highlight':
       return distToSegment(p, a.from, a.to) <= HIGHLIGHT_WIDTH / 2 + 2
+    case 'redact': {
+      const x1 = Math.min(a.from.x, a.to.x)
+      const x2 = Math.max(a.from.x, a.to.x)
+      const y1 = Math.min(a.from.y, a.to.y)
+      const y2 = Math.max(a.from.y, a.to.y)
+      return p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2
+    }
     case 'rect': {
       const x1 = Math.min(a.from.x, a.to.x)
       const x2 = Math.max(a.from.x, a.to.x)

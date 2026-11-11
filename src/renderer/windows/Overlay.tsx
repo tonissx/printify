@@ -3,9 +3,10 @@ import { RADIUS_PX, type Format, type OverlayInit, type Rect } from '../../share
 import { Button, IconButton, Kbd, Segmented } from '../ds'
 import { boundsOf, drawAnnotations, hitTest, translate, type Annotation, type Pt } from '../lib/annotations'
 import { renderCapture } from '../lib/roundedCrop'
+import { findSensitive } from '../../shared/sensitive'
 
-type Tool = 'none' | 'pen' | 'highlight' | 'arrow' | 'line' | 'rect' | 'text'
-type DrawTool = 'pen' | 'highlight' | 'arrow' | 'line' | 'rect'
+type Tool = 'none' | 'pen' | 'highlight' | 'arrow' | 'line' | 'rect' | 'redact' | 'text'
+type DrawTool = 'pen' | 'highlight' | 'arrow' | 'line' | 'rect' | 'redact'
 const isDrawTool = (t: Tool): t is DrawTool => t !== 'none' && t !== 'text'
 type Handle = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -48,6 +49,8 @@ export function Overlay() {
   const [textAt, setTextAt] = useState<Pt | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [hover, setHover] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [note, setNote] = useState('')
   const [mic, setMic] = useState(false)
   const [countdownOn, setCountdownOn] = useState(false)
   const [format, setFormat] = useState<Format>('mp4')
@@ -149,6 +152,65 @@ export function Overlay() {
     [rect, init, anns]
   )
 
+  // Recorte cru da seleção (sem anotações nem cantos), em PNG, para o OCR.
+  const rawCrop = useCallback(async (): Promise<{ bytes: Uint8Array; k: number } | null> => {
+    const img = imgRef.current
+    if (!img || !rect || !init) return null
+    const k = img.naturalWidth / init.bounds.width
+    const canvas = document.createElement('canvas')
+    renderCapture(canvas, img, { x: rect.x * k, y: rect.y * k, width: rect.width * k, height: rect.height * k }, 0)
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'))
+    return blob ? { bytes: new Uint8Array(await blob.arrayBuffer()), k } : null
+  }, [rect, init])
+
+  const say = useCallback((msg: string) => {
+    setNote(msg)
+    setTimeout(() => setNote((m) => (m === msg ? '' : m)), 4000)
+  }, [])
+
+  const copyImageText = useCallback(async () => {
+    if (busy || !shot || !rect) return
+    setBusy('Lendo o texto…')
+    try {
+      const crop = await rawCrop()
+      if (!crop) return
+      const res = await window.printify.ocr(crop.bytes)
+      if (!res.text) say('Nenhum texto encontrado')
+      else await window.printify.copyText(res.text)
+    } catch (e) {
+      console.error(e)
+      say('Não foi possível ler o texto')
+    } finally {
+      setBusy(null)
+    }
+  }, [busy, shot, rect, rawCrop, say])
+
+  const hideSensitive = useCallback(async () => {
+    if (busy || !shot || !rect) return
+    const area = rect
+    setBusy('Procurando dados sensíveis…')
+    try {
+      const crop = await rawCrop()
+      if (!crop) return
+      const res = await window.printify.ocr(crop.bytes)
+      const found = findSensitive(res.lines)
+      if (found.length === 0) return say('Nenhum dado sensível encontrado')
+      const pad = 2
+      const added: Annotation[] = found.map((f) => ({
+        kind: 'redact',
+        from: { x: area.x + f.box.x0 / crop.k - pad, y: area.y + f.box.y0 / crop.k - pad },
+        to: { x: area.x + f.box.x1 / crop.k + pad, y: area.y + f.box.y1 / crop.k + pad }
+      }))
+      setAnns((a) => [...a, ...added])
+      say(`${added.length} ${added.length === 1 ? 'trecho ocultado' : 'trechos ocultados'}. Confira antes de salvar`)
+    } catch (e) {
+      console.error(e)
+      say('Não foi possível ler o texto')
+    } finally {
+      setBusy(null)
+    }
+  }, [busy, shot, rect, rawCrop, say])
+
   const go = useCallback(() => {
     if (!rect) return
     void window.printify.startRecording({ mic, format }, rect)
@@ -229,6 +291,9 @@ export function Overlay() {
       if (shot) {
         if (k === 'p') setTool((t) => (t === 'pen' ? 'none' : 'pen'))
         if (k === 'v') setTool('none')
+        if (k === 'o') void copyImageText()
+        if (k === 'd') void hideSensitive()
+        if (k === 'b') setTool((t) => (t === 'redact' ? 'none' : 'redact'))
         if (k === 'h') setTool((t) => (t === 'highlight' ? 'none' : 'highlight'))
         if (k === 'a') setTool((t) => (t === 'arrow' ? 'none' : 'arrow'))
         if (k === 'l') setTool((t) => (t === 'line' ? 'none' : 'line'))
@@ -238,7 +303,7 @@ export function Overlay() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [rect, shot, count, textAt, selected, tool, close, confirmShot, startRecord, selectAll])
+  }, [rect, shot, count, textAt, selected, tool, close, confirmShot, startRecord, selectAll, copyImageText, hideSensitive])
 
   // Ponteiro
   const pt = (e: { clientX: number; clientY: number }): Pt => ({ x: clamp(e.clientX, 0, W), y: clamp(e.clientY, 0, H) })
@@ -310,7 +375,7 @@ export function Overlay() {
       setDraft((cur) => {
         if (!cur) return cur
         if (cur.kind === 'pen') return { kind: 'pen', points: [...cur.points, p] }
-        if (cur.kind === 'arrow' || cur.kind === 'line' || cur.kind === 'rect' || cur.kind === 'highlight') return { ...cur, to: p }
+        if (cur.kind === 'arrow' || cur.kind === 'line' || cur.kind === 'rect' || cur.kind === 'highlight' || cur.kind === 'redact') return { ...cur, to: p }
         return cur
       })
   }
@@ -419,7 +484,13 @@ export function Overlay() {
                 <IconButton icon="highlight" label="Marca-texto" shortcut="H" size="sm" active={tool === 'highlight'} onClick={() => setTool(tool === 'highlight' ? 'none' : 'highlight')} />
                 <IconButton icon="line" label="Linha" shortcut="L" size="sm" active={tool === 'line'} onClick={() => setTool(tool === 'line' ? 'none' : 'line')} />
                 <IconButton icon="rect" label="Retângulo" shortcut="R" size="sm" active={tool === 'rect'} onClick={() => setTool(tool === 'rect' ? 'none' : 'rect')} />
+                <IconButton icon="redact" label="Tarja (ocultar uma área)" shortcut="B" size="sm" active={tool === 'redact'} onClick={() => setTool(tool === 'redact' ? 'none' : 'redact')} />
                 <IconButton icon="text" label="Texto" shortcut="T" size="sm" active={tool === 'text'} onClick={() => setTool(tool === 'text' ? 'none' : 'text')} />
+              </span>
+              <span className="pf-bar-div" />
+              <span className="pf-bar-group">
+                <IconButton icon="shield" label="Ocultar dados sensíveis" shortcut="D" size="sm" disabled={!!busy} onClick={() => void hideSensitive()} />
+                <IconButton icon="scan" label="Copiar texto da imagem" shortcut="O" size="sm" disabled={!!busy} onClick={() => void copyImageText()} />
               </span>
               <span className="pf-bar-div" />
               <IconButton icon="crop" label="Refazer seleção" size="sm" onClick={() => { setRect(null); setAnns([]); setTool('none') }} />
@@ -444,6 +515,17 @@ export function Overlay() {
             </>
           )}
           <IconButton icon="close" label="Fechar" shortcut="Esc" size="sm" onClick={close} />
+        </div>
+      )}
+
+      {(busy || note) && rect && count === null && (
+        <div
+          className="ov-note"
+          style={{ left: barLeft, top: clamp(barTop > rect.y ? barTop + BAR_H + 6 : barTop - 30, 4, H - 30) }}
+          onPointerDown={stop}
+          role="status"
+        >
+          {busy ?? note}
         </div>
       )}
 

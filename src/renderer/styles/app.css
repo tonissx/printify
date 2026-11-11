@@ -41,3 +41,37 @@ html, body, #root {
 
 /* Pill e toast ficam centralizados na própria janela transparente */
 .pill-host, .toast-host { display: grid; place-items: center; width: 100%; height: 100%; }
+
+/* Nota ao lado da barra do print ("Lendo o texto…", "2 trechos ocultados") */
+.ov-note {
+  position: absolute; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-3);
+  border-radius: var(--radius-pill); background: var(--ink); color: var(--on-ink);
+  font: 400 12px/16px var(--font-sans); pointer-events: none; cursor: default; white-space: nowrap;
+}
+
+/* Biblioteca de capturas */
+.lib { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--canvas); color: var(--ink); user-select: text; -webkit-user-select: text; }
+.lib-head { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); background: var(--surface); }
+.lib-title { margin: 0; font: 600 20px/28px var(--font-sans); letter-spacing: -0.01em; }
+.lib-search {
+  flex: 1; max-width: 560px; display: flex; align-items: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-3);
+  background: var(--surface-sunken); border-radius: var(--radius-md); box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-muted);
+}
+.lib-search:focus-within { box-shadow: inset 0 0 0 2px var(--focus); color: var(--ink); }
+.lib-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 400 14px/20px var(--font-sans); }
+.lib-search input::placeholder { color: var(--ink-faint); }
+.lib-status { margin-left: auto; font: 400 12px/16px var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.lib-body { flex: 1; overflow: auto; padding: var(--space-6); }
+.lib-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.lib-card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2); background: var(--surface); border-radius: var(--radius-md); box-shadow: 0 0 0 1px var(--line); }
+.lib-thumb { display: block; width: 100%; aspect-ratio: 16 / 10; padding: 0; border: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-sunken); cursor: pointer; color: var(--ink-faint); font: 400 12px/16px var(--font-sans); }
+.lib-thumb:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.lib-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.lib-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.lib-date { font: 400 12px/16px var(--font-sans); color: var(--ink-muted); }
+.lib-actions { display: inline-flex; gap: 2px; }
+.lib-snippet { margin: 0; font: 400 12px/16px var(--font-sans); color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lib-snippet mark { background: var(--flash-soft); color: var(--flash-text); border-radius: 2px; padding: 0 1px; }
+.lib-empty { max-width: 420px; margin: 12vh auto 0; text-align: center; color: var(--ink-muted); font: 400 14px/20px var(--font-sans); }
+.lib-empty-title { margin: 0 0 var(--space-2); font: 600 20px/28px var(--font-sans); color: var(--ink); letter-spacing: -0.01em; }
+.lib-toast { position: fixed; left: 50%; bottom: var(--space-6); transform: translateX(-50%); }
