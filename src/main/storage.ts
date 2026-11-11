@@ -26,7 +26,9 @@ export function setPrefs(patch: Partial<Prefs>): Prefs {
 
 /** Pasta de destino: Imagens\Printify ou Vídeos\Printify, criada se faltar. */
 export function outputDir(kind: 'pictures' | 'videos'): string {
-  const dir = join(app.getPath(kind), 'Printify')
+  // PRINTIFY_PICTURES_DIR / PRINTIFY_VIDEOS_DIR: só para testes, para não mexer nas pastas do usuário.
+  const override = process.env[kind === 'pictures' ? 'PRINTIFY_PICTURES_DIR' : 'PRINTIFY_VIDEOS_DIR']
+  const dir = override ?? join(app.getPath(kind), 'Printify')
   mkdirSync(dir, { recursive: true })
   return dir
 }

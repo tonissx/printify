@@ -63,4 +63,47 @@ export interface PrintifyApi {
   cancelRecording(reason?: string): Promise<void>
   toastReady(): Promise<ToastInit>
   revealPath(path: string): Promise<void>
+  /** OCR local de um PNG (recorte da seleção). */
+  ocr(png: Uint8Array): Promise<OcrResult>
+  /** Copia texto para a área de transferência, fecha a seleção e avisa. */
+  copyText(text: string): Promise<void>
+  libSearch(query: string): Promise<CaptureHit[]>
+  libStats(): Promise<LibraryStats>
+  libOpen(path: string): Promise<void>
+  libReveal(path: string): Promise<void>
+  libCopyImage(path: string): Promise<void>
+}
+
+export interface OcrWord {
+  text: string
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+}
+
+export interface OcrLine {
+  text: string
+  words: OcrWord[]
+}
+
+/** Resultado do OCR. As caixas estão em pixels da imagem enviada. */
+export interface OcrResult {
+  text: string
+  lines: OcrLine[]
+}
+
+export interface CaptureHit {
+  path: string
+  name: string
+  mtime: number
+  snippet: string
+  /** Miniatura em data URL (vazia se o arquivo não abriu). */
+  thumb: string
+}
+
+export interface LibraryStats {
+  total: number
+  indexed: number
+  pending: number
 }

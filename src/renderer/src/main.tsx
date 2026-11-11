@@ -8,6 +8,7 @@ import '../styles/bundle.css'
 import '../styles/app.css'
 import { createRoot } from 'react-dom/client'
 import type { PrintifyApi } from '../../shared/types'
+import { Library } from '../windows/Library'
 import { Overlay } from '../windows/Overlay'
 import { Pill } from '../windows/Pill'
 import { ToastWindow } from '../windows/ToastWindow'
@@ -19,5 +20,5 @@ declare global {
 }
 
 const route = location.hash.replace(/^#\/?/, '')
-const Root = route === 'overlay' ? Overlay : route === 'pill' ? Pill : ToastWindow
+const Root = route === 'overlay' ? Overlay : route === 'pill' ? Pill : route === 'library' ? Library : ToastWindow
 createRoot(document.getElementById('root')!).render(<Root />)

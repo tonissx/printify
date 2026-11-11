@@ -1,12 +1,15 @@
 import { app, clipboard, desktopCapturer, screen, ClipboardItem, globalShortcut, ipcMain, Menu, nativeImage, shell, Tray } from 'electron'
-import { rmSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Display } from 'electron'
 import type { Format, Prefs, Rect, RecordStart } from '../shared/types'
 import { convert } from './ffmpeg'
+import { flushLibrary, queueIndex, scanFolder, search, stats } from './library'
+import { configureOcr, shutdownOcr } from './ocr'
+import { ocrImage } from './ocrImage'
 import { getPrefs, outputDir, setPrefs, stamp } from './storage'
 import {
-  activeDisplay, closeOverlay, closePill, openOverlay, openPill, overlayInit, pillInit, pillWin, showToast, toastInit
+  activeDisplay, closeOverlay, closePill, openLibrary, openOverlay, openPill, overlayInit, pillInit, pillWin, showToast, toastInit
 } from './windows'
 
 const SHORTCUT_SHOT = 'Control+PrintScreen'
@@ -21,6 +24,12 @@ if (!app.requestSingleInstanceLock()) {
 
 function fromSender<T>(map: Map<number, T>, e: Electron.IpcMainInvokeEvent): T | undefined {
   return map.get(e.sender.id)
+}
+
+/** Abre a janela de capturas e confere a pasta (indexa o que é novo). */
+function showLibrary(): void {
+  scanFolder()
+  openLibrary()
 }
 
 function registerShortcuts(): void {
@@ -50,11 +59,13 @@ function createTray(): void {
           tray?.setContextMenu(build())
         }
       },
+      { label: 'Buscar capturas…', click: () => showLibrary() },
       { label: 'Abrir pasta de capturas', click: () => void shell.openPath(outputDir('pictures')) },
       { type: 'separator' },
       { label: 'Sair', click: () => app.quit() }
     ])
   tray.setContextMenu(build())
+  tray.on('double-click', () => showLibrary())
 }
 
 async function startRecording(display: Display, region: Rect, mic: boolean, format: Format): Promise<void> {
@@ -89,6 +100,7 @@ function registerIpc(): void {
     }
     const path = join(outputDir('pictures'), `${stamp()}.png`)
     writeFileSync(path, buf)
+    queueIndex(path) // OCR em segundo plano, para a busca; não atrasa o aviso de "Salvo"
     closeOverlay()
     showToast({ message: 'Salvo e copiado', action: 'Abrir pasta', revealPath: path })
   })
@@ -127,17 +139,50 @@ function registerIpc(): void {
     if (reason) showToast({ message: `Não foi possível gravar: ${reason}`, tone: 'neutral' })
   })
 
+  ipcMain.handle('ocr', (_e, png: Uint8Array) => ocrImage(Buffer.from(png)))
+  ipcMain.handle('text:copy', async (_e, text: string) => {
+    await clipboard.write([new ClipboardItem({ 'text/plain': text })])
+    closeOverlay()
+    showToast({ message: 'Texto copiado' })
+  })
+
+  ipcMain.handle('lib:search', (_e, query: string) => search(String(query ?? '')))
+  ipcMain.handle('lib:stats', () => stats())
+  ipcMain.handle('lib:open', (_e, path: string) => void shell.openPath(path))
+  ipcMain.handle('lib:reveal', (_e, path: string) => shell.showItemInFolder(path))
+  ipcMain.handle('lib:copy-image', async (_e, path: string) => {
+    const png = readFileSync(path)
+    await clipboard.write([new ClipboardItem({ 'image/png': new Blob([png], { type: 'image/png' }) })])
+  })
+
   ipcMain.handle('toast:ready', (e) => fromSender(toastInit, e))
   ipcMain.handle('toast:reveal', (_e, path: string) => shell.showItemInFolder(path))
 }
 
 void app.whenReady().then(() => {
+  // Em produção o app fica em app.asar e o que o worker do OCR precisa ler fica em app.asar.unpacked.
+  const base = app.getAppPath().replace('app.asar', 'app.asar.unpacked')
+  configureOcr({
+    workerPath: join(base, 'node_modules/tesseract.js/src/worker-script/node/index.js'),
+    langPath: join(base, 'resources/tessdata')
+  })
   registerIpc()
   registerShortcuts()
   createTray()
+  // Indexa em segundo plano as capturas que ainda não foram lidas (sem competir com o início do app).
+  setTimeout(scanFolder, 10_000)
+  // Teste sem janela: PRINTIFY_OCR_SELFTEST=<png> imprime o texto lido e sai.
+  const selftest = process.env['PRINTIFY_OCR_SELFTEST']
+  if (selftest) {
+    void ocrImage(readFileSync(selftest))
+      .then((r) => console.log('OCR_RESULT', JSON.stringify(r.text)))
+      .catch((e) => console.log('OCR_ERROR', String(e)))
+      .finally(() => app.quit())
+  }
   // Atalho de desenvolvimento: PRINTIFY_OPEN=shot|record abre a captura já na inicialização.
   const open = process.env['PRINTIFY_OPEN']
   if (open === 'shot' || open === 'record') void openOverlay(open)
+  if (open === 'library') showLibrary()
   if (open === 'record-auto') {
     // Teste sem cliques: grava a tela principal por 4 s e salva.
     const d = screen.getPrimaryDisplay()
@@ -149,6 +194,8 @@ void app.whenReady().then(() => {
 // App de bandeja: continua rodando sem janelas.
 app.on('window-all-closed', () => {})
 app.on('will-quit', () => {
+  flushLibrary()
+  void shutdownOcr()
   globalShortcut.unregisterAll()
   tray?.destroy()
 })
