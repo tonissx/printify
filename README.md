@@ -116,7 +116,7 @@ Usar o botão Print Screen para abrir captura de tela**.
 
 ## Compilar a partir do código
 
-Node 22+:
+Node 24+:
 
 ```bash
 git clone https://github.com/tonissx/printify.git
