@@ -1,3 +1,4 @@
+import { installUpdateNow, startUpdater, updateState } from './updater'
 import { app, clipboard, desktopCapturer, screen, ClipboardItem, globalShortcut, ipcMain, Menu, nativeImage, shell, Tray } from 'electron'
 import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -16,6 +17,7 @@ const SHORTCUT_SHOT = 'Control+PrintScreen'
 const SHORTCUT_REC = 'Control+G'
 
 let tray: Tray | null = null
+const rebuildTray = (): void => tray?.setContextMenu(buildTrayMenu())
 let recording = false
 
 if (!app.requestSingleInstanceLock()) {
@@ -46,7 +48,20 @@ function createTray(): void {
   const icon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png')).resize({ width: 16, height: 16 })
   tray = new Tray(icon)
   tray.setToolTip('Printify')
-  const build = () => Menu.buildFromTemplate([
+  tray.setContextMenu(buildTrayMenu())
+  tray.on('double-click', () => showLibrary())
+}
+
+function buildTrayMenu(): Menu {
+  const up = updateState()
+  const update: Electron.MenuItemConstructorOptions[] =
+    up.status === 'ready'
+      ? [{ label: `Reiniciar e atualizar para a ${up.version}`, click: () => installUpdateNow() }, { type: 'separator' }]
+      : up.status === 'downloading'
+        ? [{ label: `Baixando a versão ${up.version}…`, enabled: false }, { type: 'separator' }]
+        : []
+  return Menu.buildFromTemplate([
+      ...update,
       { label: 'Capturar área\tCtrl+Print', click: () => void openOverlay('shot') },
       { label: 'Gravar tela\tCtrl+G', click: () => void openOverlay('record') },
       { type: 'separator' },
@@ -56,7 +71,7 @@ function createTray(): void {
         checked: getPrefs().rounded,
         click: (item) => {
           setPrefs({ rounded: item.checked })
-          tray?.setContextMenu(build())
+          rebuildTray()
         }
       },
       { label: 'Buscar capturas…', click: () => showLibrary() },
@@ -64,8 +79,6 @@ function createTray(): void {
       { type: 'separator' },
       { label: 'Sair', click: () => app.quit() }
     ])
-  tray.setContextMenu(build())
-  tray.on('double-click', () => showLibrary())
 }
 
 async function startRecording(display: Display, region: Rect, mic: boolean, format: Format): Promise<void> {
@@ -169,6 +182,7 @@ void app.whenReady().then(() => {
   registerIpc()
   registerShortcuts()
   createTray()
+  startUpdater(rebuildTray, (v) => showToast({ message: `Versão ${v} baixada. Será instalada ao fechar o Printify` }))
   // Indexa em segundo plano as capturas que ainda não foram lidas (sem competir com o início do app).
   setTimeout(scanFolder, 10_000)
   // Teste sem janela: PRINTIFY_OCR_SELFTEST=<png> imprime o texto lido e sai.
