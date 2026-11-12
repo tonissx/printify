@@ -14,6 +14,7 @@ export type Annotation =
 
 export const LINE_WIDTH = 3
 export const FONT_SIZE = 18
+export const BLUR_RADIUS = 12
 export const HIGHLIGHT_WIDTH = 18
 export const HIGHLIGHT_COLOR = 'rgba(255, 214, 0, 0.4)'
 
@@ -27,7 +28,9 @@ export function drawAnnotations(
   color: string,
   scale = 1,
   ox = 0,
-  oy = 0
+  oy = 0,
+  /** Imagem congelada da tela inteira (tamanho lógico width × height), usada pelo embaçamento. */
+  backdrop?: { image: CanvasImageSource; width: number; height: number }
 ): void {
   const px = (p: Pt) => ({ x: (p.x - ox) * scale, y: (p.y - oy) * scale })
   ctx.save()
@@ -47,12 +50,21 @@ export function drawAnnotations(
       for (const p of rest) ctx.lineTo(p.x, p.y)
       ctx.stroke()
     } else if (a.kind === 'redact') {
-      // Tarja 100% opaca (nunca desfoque): o que está embaixo não pode ser recuperado do PNG.
+      // Embaçamento: redesenha a imagem original, desfocada, só dentro do retângulo.
       const f = px(a.from)
       const t = px(a.to)
+      const [rx, ry, rw, rh] = [Math.min(f.x, t.x), Math.min(f.y, t.y), Math.abs(t.x - f.x), Math.abs(t.y - f.y)]
       ctx.save()
-      ctx.fillStyle = '#000'
-      ctx.fillRect(Math.min(f.x, t.x), Math.min(f.y, t.y), Math.abs(t.x - f.x), Math.abs(t.y - f.y))
+      ctx.beginPath()
+      ctx.rect(rx, ry, rw, rh)
+      ctx.clip()
+      if (backdrop) {
+        ctx.filter = `blur(${BLUR_RADIUS * scale}px)`
+        ctx.drawImage(backdrop.image, -ox * scale, -oy * scale, backdrop.width * scale, backdrop.height * scale)
+      } else {
+        ctx.fillStyle = '#888' // sem imagem de fundo (testes): cinza neutro
+        ctx.fillRect(rx, ry, rw, rh)
+      }
       ctx.restore()
     } else if (a.kind === 'highlight') {
       const f = px(a.from)
