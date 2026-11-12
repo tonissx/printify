@@ -98,7 +98,8 @@ export function Overlay() {
     ctx.beginPath()
     ctx.rect(rect.x * sf, rect.y * sf, rect.width * sf, rect.height * sf)
     ctx.clip()
-    drawAnnotations(ctx, draft ? [...anns, draft] : anns, flash(), sf)
+    const bd = imgRef.current ? { image: imgRef.current, width: W, height: H } : undefined
+    drawAnnotations(ctx, draft ? [...anns, draft] : anns, flash(), sf, 0, 0, bd)
     // Contorno de seleção: só na pré-visualização, nunca no arquivo salvo.
     if (selected !== null && anns[selected]) {
       const b = boundsOf(anns[selected])
@@ -143,7 +144,12 @@ export function Overlay() {
         img,
         { x: rect.x * k, y: rect.y * k, width: rect.width * k, height: rect.height * k },
         (init.prefs.rounded ? RADIUS_PX : 0) * k,
-        (ctx) => drawAnnotations(ctx as CanvasRenderingContext2D, anns, flash(), k, rect.x, rect.y)
+        (ctx) =>
+          drawAnnotations(ctx as CanvasRenderingContext2D, anns, flash(), k, rect.x, rect.y, {
+            image: img,
+            width: init.bounds.width,
+            height: init.bounds.height
+          })
       )
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'))
       if (!blob) return
@@ -484,7 +490,7 @@ export function Overlay() {
                 <IconButton icon="highlight" label="Marca-texto" shortcut="H" size="sm" active={tool === 'highlight'} onClick={() => setTool(tool === 'highlight' ? 'none' : 'highlight')} />
                 <IconButton icon="line" label="Linha" shortcut="L" size="sm" active={tool === 'line'} onClick={() => setTool(tool === 'line' ? 'none' : 'line')} />
                 <IconButton icon="rect" label="Retângulo" shortcut="R" size="sm" active={tool === 'rect'} onClick={() => setTool(tool === 'rect' ? 'none' : 'rect')} />
-                <IconButton icon="redact" label="Tarja (ocultar uma área)" shortcut="B" size="sm" active={tool === 'redact'} onClick={() => setTool(tool === 'redact' ? 'none' : 'redact')} />
+                <IconButton icon="redact" label="Embaçar (ocultar uma área)" shortcut="B" size="sm" active={tool === 'redact'} onClick={() => setTool(tool === 'redact' ? 'none' : 'redact')} />
                 <IconButton icon="text" label="Texto" shortcut="T" size="sm" active={tool === 'text'} onClick={() => setTool(tool === 'text' ? 'none' : 'text')} />
               </span>
               <span className="pf-bar-div" />

@@ -41,22 +41,22 @@ O PNG vai para `Imagens\Printify\` e também para a área de transferência.
 | Selecionar e mover | **V** | Clique num desenho para selecioná-lo e arraste. **Delete** apaga |
 | Caneta | **P** | Traço livre |
 | Marca-texto | **H** | Faixa translúcida reta |
-| Tarja | **B** | Retângulo preto opaco para esconder uma área à mão |
+| Embaçar | **B** | Desfoca uma área à mão |
 | Linha | **L** | |
 | Retângulo | **R** | Só contorno |
 | Seta | **A** | |
 | Texto | **T** | **Enter** ou um clique fora salva o texto |
-| Ocultar dados sensíveis | **D** | Acha e cobre com tarjas, automaticamente (veja abaixo) |
+| Ocultar dados sensíveis | **D** | Acha e embaça, automaticamente (veja abaixo) |
 | Copiar texto da imagem | **O** | OCR da seleção: copia o texto para a área de transferência |
 
 #### Ocultar dados sensíveis
 
-O **D** lê o texto da seleção (OCR local) e cobre com uma **tarja preta opaca** o que parece dado sensível:
+O **D** lê o texto da seleção (OCR local) e embaça o que parece dado sensível:
 e-mails, CPF e CNPJ (com dígito verificador), cartões (com Luhn), telefones, chaves de API (GitHub, AWS, Google, Stripe e
 similares), tokens JWT e `Bearer`, senhas e segredos (`senha: …`, `api_key=…`) e usuário:senha dentro de URLs.
 
-As tarjas são desenhos como os outros: dá para **mover, apagar (Delete)** ou acrescentar mais com a ferramenta Tarja (**B**).
-Elas são sempre opacas, nunca desfoque, porque desfoque pode ser revertido. **Confira o resultado antes de salvar**:
+Os embaçamentos são desenhos como os outros: dá para **mover, apagar (Delete)** ou acrescentar mais com a ferramenta Embaçar (**B**).
+O embaçamento é forte, mas não é uma tarja: para dados muito críticos, prefira cobrir à mão. **Confira o resultado antes de salvar**:
 o OCR pode errar, então nada garante que tudo foi encontrado.
 
 #### Copiar texto da imagem
@@ -75,7 +75,7 @@ direito no ícone da bandeja e escolha **Buscar capturas…** (ou dê um duplo c
 - Cada resultado mostra a miniatura e o trecho do texto com o termo destacado. Clique na miniatura para abrir a
   imagem; os botões copiam a imagem ou mostram o arquivo na pasta.
 - Capturas antigas, de antes da busca, são indexadas na primeira vez que a janela abre.
-- O que você ocultou com tarja **não entra no índice**, porque o texto é lido do arquivo já salvo.
+- O que você ocultou **não entra no índice**, porque o texto é lido do arquivo já salvo.
 - O índice fica só no seu computador (`%APPDATA%\Printify\index.json`).
 
 ### Gravação
