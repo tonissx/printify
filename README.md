@@ -102,6 +102,13 @@ ffmpeg ou nada além do instalador (`Printify-Setup-x.y.z.exe`). O ffmpeg já ve
 
 **Requisito:** Windows 10 ou 11, 64 bits.
 
+### Atualização
+
+O app se atualiza sozinho: ao abrir (e a cada 6 horas) ele confere se há uma release nova no GitHub, baixa em segundo
+plano e instala quando você fecha o Printify. Um aviso mostra que a versão foi baixada, e o menu da bandeja ganha
+**Reiniciar e atualizar** para instalar na hora. A atualização só vale a partir da versão que traz esse recurso; quem
+está numa versão anterior precisa instalar uma vez à mão.
+
 ### Assinatura digital
 
 **O instalador ainda não é assinado digitalmente.** Na primeira execução, o Windows SmartScreen pode mostrar
@@ -204,6 +211,10 @@ Todo PR mergeado na `main` publica uma nova versão automaticamente
 2. **Release**: cria a tag `vX.Y.Z` e a página da release, com as notas geradas dos PRs.
 3. **Build**: no Windows, roda `typecheck` e testes; só se passarem compila o instalador e o anexa à release.
 4. **Verificação**: gera o `SHA256SUMS.txt` e o atestado de procedência dos instaladores.
+
+### Convenção para PRs
+
+Nunca coloque "Generated with Claude", "🤖 Generated with Claude Code" ou frases parecidas na descrição do PR.
 
 ---
 
